@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+Backend/node_modules/
+Frontend/node_modules/
+
+# environment secrets
+.env
+Backend/.env
+Frontend/.env
+
+# build outputs
+Frontend/dist/
+dist/
+
+# runtime files
+Backend/uploads/*
+!Backend/uploads/.gitkeep
+*.log
+.DS_Store
