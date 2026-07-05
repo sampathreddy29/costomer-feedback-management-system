@@ -73,3 +73,8 @@ Submit these on Moodle:
 - Vercel frontend URL
 - Render backend URL
 - Technical report PDF or Word document
+## Live Deployment URLs
+
+- Frontend: https://customer-feedback-management-system-black.vercel.app
+- Backend API: https://costomer-feedback-management-system.onrender.com
+- GitHub Repository: https://github.com/sampathreddy29/costomer-feedback-management-system

@@ -94,3 +94,8 @@ Recommended deployment:
 - API documentation: `docs/API.md`
 - Technical report draft: `docs/TECHNICAL_REPORT.md`
 - Presentation outline: `docs/PRESENTATION_OUTLINE.md`
+## Live Deployment URLs
+
+- Frontend: https://customer-feedback-management-system-black.vercel.app
+- Backend API: https://costomer-feedback-management-system.onrender.com
+- GitHub Repository: https://github.com/sampathreddy29/costomer-feedback-management-system
