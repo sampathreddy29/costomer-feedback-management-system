@@ -1,4 +1,4 @@
-﻿const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const replySchema = new mongoose.Schema({
   message: {
@@ -18,11 +18,34 @@ const replySchema = new mongoose.Schema({
   }
 }, { _id: false });
 
+const historySchema = new mongoose.Schema({
+  action: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  changedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+}, { _id: false });
+
 const feedbackSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  title: {
+    type: String,
+    required: [true, 'Title is required'],
+    trim: true,
+    minlength: 3,
+    maxlength: 120
   },
   rating: {
     type: Number,
@@ -36,6 +59,28 @@ const feedbackSchema = new mongoose.Schema({
     enum: ['service', 'product', 'website', 'delivery', 'support', 'other'],
     default: 'other'
   },
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
+  },
+  source: {
+    type: String,
+    enum: ['web', 'qr', 'email', 'phone', 'in-store', 'other'],
+    default: 'web'
+  },
+  location: {
+    type: String,
+    trim: true,
+    maxlength: 120,
+    default: ''
+  },
+  tags: [{
+    type: String,
+    trim: true,
+    lowercase: true,
+    maxlength: 30
+  }],
   comment: {
     type: String,
     required: [true, 'Comment is required'],
@@ -57,19 +102,35 @@ const feedbackSchema = new mongoose.Schema({
     enum: ['positive', 'neutral', 'negative'],
     default: 'neutral'
   },
+  adminNote: {
+    type: String,
+    trim: true,
+    maxlength: 1000,
+    default: ''
+  },
   reply: {
     type: replySchema,
     default: null
+  },
+  history: {
+    type: [historySchema],
+    default: []
   }
 }, { timestamps: true });
 
 feedbackSchema.index({ user: 1, createdAt: -1 });
-feedbackSchema.index({ rating: 1, status: 1, category: 1 });
-feedbackSchema.index({ comment: 'text', category: 'text', status: 'text' });
+feedbackSchema.index({ rating: 1, status: 1, category: 1, priority: 1 });
+feedbackSchema.index({ comment: 'text', title: 'text', category: 'text', status: 'text', tags: 'text', location: 'text' });
 
 feedbackSchema.pre('save', function setSentiment(next) {
-  if (this.rating >= 4) this.sentiment = 'positive';
-  else if (this.rating <= 2) this.sentiment = 'negative';
+  const negativeWords = ['bad', 'poor', 'slow', 'broken', 'angry', 'terrible', 'late', 'issue', 'problem'];
+  const positiveWords = ['good', 'great', 'excellent', 'fast', 'helpful', 'happy', 'perfect', 'love'];
+  const text = `${this.title || ''} ${this.comment || ''}`.toLowerCase();
+  const negativeHits = negativeWords.filter((word) => text.includes(word)).length;
+  const positiveHits = positiveWords.filter((word) => text.includes(word)).length;
+
+  if (this.rating <= 2 || negativeHits > positiveHits) this.sentiment = 'negative';
+  else if (this.rating >= 4 || positiveHits > negativeHits) this.sentiment = 'positive';
   else this.sentiment = 'neutral';
   next();
 });

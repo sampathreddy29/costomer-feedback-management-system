@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const { body, param } = require('express-validator');
 const {
   createFeedback,
@@ -15,8 +15,12 @@ const validate = require('../middleware/validateMiddleware');
 const router = express.Router();
 
 const feedbackRules = [
+  body('title').trim().isLength({ min: 3, max: 120 }).withMessage('Title must be 3 to 120 characters'),
   body('rating').isInt({ min: 1, max: 5 }).withMessage('Rating must be between 1 and 5'),
   body('category').isIn(['service', 'product', 'website', 'delivery', 'support', 'other']).withMessage('Invalid category'),
+  body('priority').optional().isIn(['low', 'medium', 'high', 'urgent']).withMessage('Invalid priority'),
+  body('source').optional().isIn(['web', 'qr', 'email', 'phone', 'in-store', 'other']).withMessage('Invalid source'),
+  body('location').optional().trim().isLength({ max: 120 }).withMessage('Location must be under 120 characters'),
   body('comment').trim().isLength({ min: 5, max: 2000 }).withMessage('Comment must be 5 to 2000 characters')
 ];
 
