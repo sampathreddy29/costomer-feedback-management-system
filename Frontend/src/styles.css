@@ -90,6 +90,8 @@ textarea { min-height: 120px; resize: vertical; }
 .content { padding: 30px; }
 .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .page-header h1 { margin-bottom: 6px; font-size: 30px; }
+.export-wrap { display: grid; justify-items: end; gap: 6px; }
+.inline-error { color: #8d2e23; font-weight: 700; font-size: 13px; }
 .panel, .feedback-card { background: #ffffff; border: 1px solid #dbe2e7; border-radius: 8px; padding: 18px; }
 .split-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 18px; }
 .feedback-form { display: grid; grid-template-columns: 160px 180px 1fr auto; gap: 14px; align-items: end; }

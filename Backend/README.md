@@ -1,4 +1,4 @@
-﻿# Customer Feedback Management System - Backend
+# Customer Feedback Management System - Backend
 
 Express/MongoDB backend for customer feedback submission, admin dashboards, user management, and reports.
 
@@ -52,3 +52,10 @@ You can override this with `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `ADMIN_NAME` in 
 ## Uploads
 
 Use `multipart/form-data` with a `screenshot` field when creating or updating feedback with an image.
+## MongoDB Atlas DNS Note
+
+If Atlas gives `querySrv ECONNREFUSED`, keep this in `.env` so Node resolves the Atlas SRV records through public DNS:
+
+```env
+DNS_SERVERS=1.1.1.1,8.8.8.8
+```

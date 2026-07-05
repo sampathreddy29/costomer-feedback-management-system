@@ -1,5 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+export const apiBaseUrl = API_URL;
+
 export const uploadsUrl = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:5000';
 
 export const getToken = () => localStorage.getItem('feedback_token');

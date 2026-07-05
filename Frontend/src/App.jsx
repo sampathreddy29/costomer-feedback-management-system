@@ -18,7 +18,7 @@ import {
   UserRound,
   UsersRound
 } from 'lucide-react';
-import { api, clearSession, getStoredUser, storeSession, uploadsUrl } from './lib/api';
+import { api, apiBaseUrl, clearSession, getStoredUser, getToken, storeSession, uploadsUrl } from './lib/api';
 
 const categories = ['service', 'product', 'website', 'delivery', 'support', 'other'];
 const statuses = ['new', 'in-review', 'resolved', 'closed'];
@@ -145,7 +145,7 @@ function Dashboard({ user, onLogout }) {
       </aside>
       <main className="content">
         {view === 'admin' && <AdminDashboard />}
-        {view === 'feedback' && <FeedbackWorkspace user={user} adminMode={user.role === 'admin'} />}
+        {view === 'feedback' && <FeedbackWorkspace adminMode={user.role === 'admin'} />}
         {view === 'history' && <CustomerHistory />}
         {view === 'users' && <UsersPanel />}
       </main>
@@ -210,7 +210,7 @@ function AdminDashboard() {
   );
 }
 
-function FeedbackWorkspace({ adminMode }) {
+function FeedbackWorkspace({ adminMode, showForm = !adminMode }) {
   const [items, setItems] = useState([]);
   const [filters, setFilters] = useState({ search: '', status: '', category: '' });
   const [form, setForm] = useState({ rating: 5, category: 'service', comment: '', screenshot: null });
@@ -256,8 +256,8 @@ function FeedbackWorkspace({ adminMode }) {
 
   return (
     <section className="stack">
-      <Header title={adminMode ? 'All Feedback' : 'Submit Feedback'} subtitle={adminMode ? 'Search, filter, reply, resolve, or export customer feedback.' : 'Send ratings, comments, and screenshots to the business.'} action={adminMode && <ExportButton />} />
-      {!adminMode && (
+      <Header title={adminMode ? 'All Feedback' : showForm ? 'Submit Feedback' : 'My Feedback'} subtitle={adminMode ? 'Search, filter, reply, resolve, or export customer feedback.' : showForm ? 'Send ratings, comments, and screenshots to the business.' : 'Review your submitted feedback and business replies.'} action={adminMode && <ExportButton />} />
+      {!adminMode && showForm && (
         <section className="panel">
           <form className="feedback-form" onSubmit={submitFeedback}>
             <label>Rating
@@ -397,7 +397,42 @@ function Filters({ filters, setFilters }) {
 }
 
 function ExportButton() {
-  return <a className="secondary-btn" href="http://localhost:5000/api/reports/export.csv"><Download size={17} />Export CSV</a>;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const downloadCsv = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const response = await fetch(`${apiBaseUrl}/reports/export.csv`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      if (!response.ok) throw new Error('CSV export failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'feedback-report.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="export-wrap">
+      <button className="secondary-btn" type="button" onClick={downloadCsv} disabled={busy}>
+        {busy ? <RefreshCw className="spin" size={17} /> : <Download size={17} />}
+        Export CSV
+      </button>
+      {error && <span className="inline-error">{error}</span>}
+    </div>
+  );
 }
 
 function Header({ title, subtitle, action }) {
