@@ -31,6 +31,7 @@ const sources = ['web', 'qr', 'email', 'phone', 'in-store', 'other'];
 function App() {
   const [user, setUser] = useState(getStoredUser());
   const [authMode, setAuthMode] = useState('login');
+  const [portal, setPortal] = useState('customer');
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,6 +46,12 @@ function App() {
         ? { email: authForm.email, password: authForm.password }
         : authForm;
       const session = await api(endpoint, { method: 'POST', body: JSON.stringify(body) });
+      if (authMode === 'login' && portal === 'business' && session.user.role !== 'admin') {
+        throw new Error('This portal is for business users. Please use Customer Login.');
+      }
+      if (authMode === 'login' && portal === 'customer' && session.user.role === 'admin') {
+        throw new Error('This account is a business account. Please use Business Login.');
+      }
       storeSession(session);
       setUser(session.user);
     } catch (error) {
@@ -66,13 +73,13 @@ function App() {
   };
 
   if (!user) {
-    return <AuthScreen mode={authMode} setMode={setAuthMode} form={authForm} setForm={setAuthForm} onSubmit={handleAuth} error={authError} loading={loading} />;
+    return <AuthScreen mode={authMode} setMode={setAuthMode} portal={portal} setPortal={setPortal} form={authForm} setForm={setAuthForm} onSubmit={handleAuth} error={authError} loading={loading} />;
   }
 
   return <Dashboard user={user} onLogout={logout} onUserUpdate={updateUserSession} />;
 }
 
-function AuthScreen({ mode, setMode, form, setForm, onSubmit, error, loading }) {
+function AuthScreen({ mode, setMode, portal, setPortal, form, setForm, onSubmit, error, loading }) {
   return (
     <main className="auth-shell">
       <section className="auth-panel">
@@ -84,19 +91,24 @@ function AuthScreen({ mode, setMode, form, setForm, onSubmit, error, loading }) 
           </div>
         </div>
         <div className="auth-copy">
-          <h2>{mode === 'login' ? 'Welcome back' : 'Create customer account'}</h2>
-          <p>{mode === 'login' ? 'Sign in to manage feedback, ratings, replies, reports, and customer satisfaction trends.' : 'Register to submit feedback, upload screenshots, and track responses from the business.'}</p>
+          <h2>{portal === 'business' ? 'Business Login' : mode === 'login' ? 'Customer Login' : 'Create customer account'}</h2>
+          <p>{portal === 'business' ? 'Track all customer feedback, reply to customers, manage priorities, and monitor satisfaction analytics.' : mode === 'login' ? 'Sign in to submit feedback and track responses from the business.' : 'Register to submit feedback, upload screenshots, and track responses from the business.'}</p>
+        </div>
+        <div className="portal-switch" role="tablist" aria-label="Login type">
+          <button className={portal === 'customer' ? 'active' : ''} type="button" onClick={() => { setPortal('customer'); setMode('login'); }}><UserRound size={17} />Customer Login</button>
+          <button className={portal === 'business' ? 'active' : ''} type="button" onClick={() => { setPortal('business'); setMode('login'); }}><BarChart3 size={17} />Business Login</button>
         </div>
         <form className="auth-form" onSubmit={onSubmit}>
-          {mode === 'register' && (
+          {mode === 'register' && portal === 'customer' && (
             <label>Name<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" required /></label>
           )}
-          <label>Email<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" required /></label>
+          <label>Email<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder={portal === 'business' ? 'business@example.com' : 'you@example.com'} required /></label>
           <label>Password<input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Minimum 6 characters" required minLength={6} /></label>
+          {portal === 'business' && <div className="portal-note"><strong>Business accounts</strong><span>Use an admin account created by the system owner to track customer feedback.</span></div>}
           {error && <div className="alert error">{error}</div>}
-          <button className="primary-btn" type="submit" disabled={loading}>{loading ? <RefreshCw className="spin" size={18} /> : <ShieldCheck size={18} />}{mode === 'login' ? 'Login' : 'Register'}</button>
+          <button className="primary-btn" type="submit" disabled={loading}>{loading ? <RefreshCw className="spin" size={18} /> : <ShieldCheck size={18} />}{portal === 'business' ? 'Login as Business' : mode === 'login' ? 'Login as Customer' : 'Register Customer'}</button>
         </form>
-        <button className="link-btn" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>{mode === 'login' ? 'Need an account? Register' : 'Already registered? Login'}</button>
+        {portal === 'customer' && <button className="link-btn" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>{mode === 'login' ? 'Need an account? Register' : 'Already registered? Login'}</button>}
       </section>
       <section className="auth-side"><div className="metric-strip"><Metric icon={<Star />} label="Ratings" value="1-5" /><Metric icon={<ClipboardList />} label="Reports" value="CSV" /><Metric icon={<BarChart3 />} label="Trends" value="Live" /></div></section>
     </main>
@@ -112,9 +124,9 @@ function Dashboard({ user, onLogout, onUserUpdate }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-row compact"><div className="brand-mark"><MessageSquareReply size={20} /></div><div><p className="eyebrow">Feedback</p><h1>System</h1></div></div>
+        <div className="brand-row compact"><div className="brand-mark"><MessageSquareReply size={20} /></div><div><p className="eyebrow">{user.role === 'admin' ? 'Business' : 'Customer'}</p><h1>{user.role === 'admin' ? 'Feedback Tracker' : 'Feedback Portal'}</h1></div></div>
         <nav className="nav-list">{tabs.map((tab) => { const Icon = tab.icon; return <button key={tab.id} className={view === tab.id ? 'active' : ''} onClick={() => setView(tab.id)}><Icon size={18} />{tab.label}</button>; })}</nav>
-        <div className="profile-box"><div className="avatar"><UserRound size={20} /></div><div><strong>{user.name}</strong><span>{user.role}</span></div></div>
+        <div className="profile-box"><div className="avatar"><UserRound size={20} /></div><div><strong>{user.name}</strong><span>{user.role === 'admin' ? 'business' : 'customer'}</span></div></div>
         <button className="ghost-btn" onClick={onLogout}><LogOut size={18} />Logout</button>
       </aside>
       <main className="content">
@@ -148,7 +160,7 @@ function AdminDashboard() {
 
   return (
     <section className="stack">
-      <Header title="Admin Dashboard" subtitle="Operational analytics for satisfaction, urgency, channels, and response workload." action={<button className="secondary-btn" onClick={load}><RefreshCw size={17} />Refresh</button>} />
+      <Header title="Business Feedback Tracker" subtitle="Track customer feedback, urgency, channels, and response workload." action={<button className="secondary-btn" onClick={load}><RefreshCw size={17} />Refresh</button>} />
       {error && <div className="alert error">{error}</div>}
       <div className="kpi-grid"><Metric icon={<ClipboardList />} label="Total feedback" value={totals.totalFeedback || 0} /><Metric icon={<Star />} label="Average rating" value={Number(totals.averageRating || 0).toFixed(1)} /><Metric icon={<SlidersHorizontal />} label="Unresolved" value={totals.unresolved || 0} /><Metric icon={<CheckCircle2 />} label="Urgent" value={totals.urgent || 0} /></div>
       <div className="split-grid">
@@ -235,3 +247,4 @@ function Metric({ icon, label, value }) { return <div className="metric"><div cl
 function Breakdown({ title, data }) { return <div className="breakdown"><h3>{title}</h3>{data.length === 0 ? <p className="muted">No data yet.</p> : data.map((row) => <div key={row._id}><span>{row._id}</span><strong>{row.count}</strong></div>)}</div>; }
 
 export default App;
+
