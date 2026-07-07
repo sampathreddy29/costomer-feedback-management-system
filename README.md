@@ -87,13 +87,7 @@ Recommended deployment:
 - Render: backend web service
 - Vercel: frontend static deployment
 
-## Assessment Evidence
 
-- Requirements checklist: `docs/REQUIREMENTS_CHECKLIST.md`
-- Database schema: `Database/schema.md`
-- API documentation: `docs/API.md`
-- Technical report draft: `docs/TECHNICAL_REPORT.md`
-- Presentation outline: `docs/PRESENTATION_OUTLINE.md`
 ## Live Deployment URLs
 
 - Frontend: https://customer-feedback-management-system-black.vercel.app
